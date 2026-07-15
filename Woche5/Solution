@@ -1,0 +1,34 @@
+import numpy as np  # Import packages 
+#import matplotlib.pyplot as plt 
+#import pandas as pd
+import yfinance as yf
+
+data_Apple = yf.download("AAPL", start="2021-06-28", end="2022-12-31")
+data_CocaCola = yf.download("KO", start="2021-06-28", end="2022-12-31")
+data_Nvidia = yf.download("NVDA", start="2021-06-28", end="2022-12-31")
+
+days = 180 # time period that we consider
+
+np_Apple = np.array(data_Apple.loc[:, 'Close'])[:days]
+np_CocaCola = np.array(data_CocaCola.loc[:, 'Close'])[:days]
+np_Nvidia = np.array(data_Nvidia.loc[:, 'Close'])[:days]
+
+
+prices = np.array([np_CocaCola, np_Nvidia, np_Apple]) # use the opening prices
+
+log_increments = np.zeros([prices.shape[0], prices.shape[1]-1]) # number of increments
+for i in range(prices.shape[0]):
+    for j in range(prices.shape[1]-1):
+        log_increments[i,j] = np.log(prices[i,j+1]/prices[i,j])
+
+n = log_increments.shape[1] # number of increments
+R_mean = [np.sum(log_increments[0,:])/n, np.sum(log_increments[1,:])/n, np.sum(log_increments[2,:])/n]  # mean log-increments
+
+sample_variance = np.zeros(prices.shape[0])
+for i in range(prices.shape[0]): # calculation of the sample variances
+    for j in range(prices.shape[1]-1):
+        sample_variance[i] = sample_variance[i] + (log_increments[i,j]-R_mean[i])**2
+sample_variance = sample_variance/(n-1)
+
+vola_estimator = np.sqrt(253*sample_variance) # estimated volatility
+print("The "+str(days)+"d volatilities are: Coca Cola " + str(vola_estimator[0]) + ", Nvidia " + str(vola_estimator[1]) + ", Apple " + str(vola_estimator[2]) +".")
